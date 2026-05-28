@@ -4,7 +4,7 @@
  */
 
 // ⚠️ PEGA AQUÍ TU CLAVE SECRETA DE DESARROLLO
-const IA_API_KEY = "TU_API_KEY_DE_GEMINI_O_OPENAI_AQUÍ";
+const IA_API_KEY = "AIzaSyCxbPVu7l2u1w6E2x-_lOyo7mIgBlXcqhc";
 
 const AgentTools = {
   // Acción: Moverse entre pestañas de la app
