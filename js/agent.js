@@ -1,90 +1,92 @@
 /**
- * MOTOR DEL AGENTE CENTRAL F1 (2026)
- * Controla la interfaz, cambia pestañas y hace búsquedas cruzadas en tiempo real.
+ * MOTOR DEL AGENTE CENTRAL F1 (2026) - EDICIÓN INTEGRADA (SIN N8N)
+ * Se conecta directamente con la API de IA usando salidas estructuradas en JSON.
  */
 
+// ⚠️ PEGA AQUÍ TU CLAVE SECRETA DE DESARROLLO
+const IA_API_KEY = "TU_API_KEY_DE_GEMINI_O_OPENAI_AQUÍ";
+
 const AgentTools = {
-  // Acción: Moverse entre pestañas
+  // Acción: Moverse entre pestañas de la app
   switchTab(targetTab) {
-    if (typeof go === 'function') { go(targetTab); return true; }
-    return false;
+    if (typeof go === 'function') { 
+      go(targetTab); 
+      return `Éxito: Interfaz movida a la pestaña ${targetTab}`; 
+    }
+    return "Error: La función de navegación no está lista.";
   },
 
   // Acción: Cambiar filtros del mundial (Pilotos o Constructores)
   toggleStandings(filter) {
     this.switchTab('standings');
-    if (typeof swt === 'function') { swt(filter); return true; }
-    return false;
-  },
-
-  // Acción: Búsqueda cruzada masiva en caliente (Memoria de datos)
-  searchRealTime(query) {
-    const p = query.toLowerCase();
-    let matches = [];
-
-    // Buscar en las carreras guardadas
-    if (S && S.races) {
-      S.races.forEach(r => {
-        if (r.raceName.toLowerCase().includes(p) || r.Circuit.circuitName.toLowerCase().includes(p)) {
-          matches.push(`🏁 **GP Encontrado:** ${r.raceName}\n📍 Trazado: ${r.Circuit.circuitName}\n📅 Fecha: ${fd(r.date)}`);
-        }
-      });
+    if (typeof swt === 'function') { 
+      swt(filter); 
+      return `Éxito: Filtro cambiado a ${filter === 'd' ? 'Pilotos' : 'Constructores'}`; 
     }
-
-    // Buscar en la lista de pilotos y sus puntos
-    if (S && S.standings && S.standings.d) {
-      S.standings.d.forEach(drv => {
-        const name = `${drv.Driver.givenName} ${drv.Driver.familyName}`.toLowerCase();
-        if (name.includes(p) || drv.Constructors?.[0]?.name.toLowerCase().includes(p)) {
-          matches.push(`👤 **Piloto:** ${drv.Driver.givenName} ${drv.Driver.familyName} (#${drv.position})\n🏆 Escudería: ${drv.Constructors[0].name} | Puntos: **${drv.points} pts**`);
-        }
-      });
-    }
-
-    return matches;
+    return "Error: La función de filtrado no está lista.";
   }
 };
 
 const AgentRouter = {
   async processInput(userInput) {
-    const prompt = userInput.toLowerCase().trim();
-
-    // 1. Detección automática de intenciones para mover la UI (Pestañas)
-    if (prompt.includes('ir a') || prompt.includes('muéstrame') || prompt.includes('ver') || prompt.includes('pestaña')) {
-      if (prompt.includes('carrera') || prompt.includes('calendario')) {
-        AgentTools.switchTab('races');
-        return "🤖 ¡Recibido! Te acabo de mover a la pestaña de **Carreras**.";
-      }
-      if (prompt.includes('constructores') || prompt.includes('escuderías') || prompt.includes('equipos')) {
-        AgentTools.toggleStandings('c');
-        return "🤖 Entendido. Cambiando panel al **Mundial de Constructores** con los desgloses activos.";
-      }
-      if (prompt.includes('pilotos') || prompt.includes('mundial')) {
-        AgentTools.toggleStandings('d');
-        return "🤖 Hecho, jefe. Pantalla cambiada a la clasificación general de **Pilotos**.";
-      }
+    
+    // Si no has configurado tu clave, el bot te avisa
+    if (IA_API_KEY.includes("TU_API_KEY")) {
+      return "⚠️ **Error del Agente:** No has configurado tu `IA_API_KEY` dentro del archivo `js/agent.js`. Introduce tu clave de desarrollo para activar el razonamiento.";
     }
 
-    // 2. Consulta inteligente de la próxima carrera
-    if (prompt.includes('próxima') || prompt.includes('proxima') || prompt.includes('cuándo') || prompt.includes('cuando') || prompt.includes('donde') || prompt.includes('dónde')) {
-      if (S && S.races) {
-        const now = new Date();
-        const next = S.races.find(r => new Date(r.date + 'T23:59:00') >= now);
-        if (next) {
-          return `🏁 **Sincronización del circuito completada:**\n\nLa próxima cita es el **${next.raceName}**.\n📍 Circuito: **${next.Circuit.circuitName}**.\n📅 Fecha: **${fd(next.date)}**.`;
+    // Usaremos el modelo gpt-4o-mini por su velocidad y bajo coste (puedes cambiarlo por el endpoint de Gemini si prefieres)
+    const API_URL = "https://api.openai.com/v1/chat/completions";
+
+    // Configuramos las instrucciones del sistema y el formato estricto de respuesta
+    const systemInstruction = `Eres el Agente IA de una app de F1. Analiza el mensaje del usuario y decide si debes ejecutar una acción visual. 
+    Debes responder OBLIGATORIAMENTE con un formato JSON que contenga estos tres campos:
+    {
+      "reply": "Tu respuesta redactada en español para el chat.",
+      "action": "switchTab", "toggleStandings" o null si no se requiere acción.,
+      "argument": "races", "standings", "chat", "d" (pilotos) o "c" (constructores) según la acción, o null.
+    }`;
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${IA_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: userInput }
+          ],
+          // Forzamos al modelo a responder estrictamente en formato JSON
+          response_format: { type: "json_object" },
+          temperature: 0.2
+        })
+      });
+
+      if (!response.ok) throw new Error("Error en la comunicación con el servidor de IA.");
+
+      const data = await response.json();
+      // Parseamos el JSON que ha fabricado el cerebro de la IA
+      const aiResponse = JSON.parse(data.choices[0].message.content);
+
+      // Si la IA ha deducido una acción técnica, el navegador la ejecuta al instante
+      if (aiResponse.action) {
+        if (aiResponse.action === "switchTab") {
+          AgentTools.switchTab(aiResponse.argument);
+        } else if (aiResponse.action === "toggleStandings") {
+          AgentTools.toggleStandings(aiResponse.argument);
         }
       }
-      return "⚠️ Los datos del mundial aún se están cargando desde el feed, dame un segundo.";
-    }
 
-    // 3. Búsqueda libre en caliente si escribe un nombre, escudería o palabra suelta
-    if (prompt.length > 2) {
-      const search = AgentTools.searchRealTime(prompt);
-      if (search.length > 0) {
-        return `🔍 **Búsqueda en tiempo real ejecutada:**\n\n${search.join('\n\n')}`;
-      }
-    }
+      // Mostramos el texto inteligente en la burbuja del chat
+      return aiResponse.reply || "🤖 Acción procesada.";
 
-    return "🤖 No he podido ejecutar ninguna orden. Puedes pedirme cosas como:\n* *'Llévame a la pestaña de constructores'* \n* *'¿Dónde se corre la próxima carrera?'* \n* *'Busca a Verstappen'*";
+    } catch (error) {
+      console.error("Error en el núcleo del agente:", error);
+      return "⚠️ *Agente IA:* Error de respuesta en mi módulo de lenguaje. Comprueba la validez de tu API Key.";
+    }
   }
 };
