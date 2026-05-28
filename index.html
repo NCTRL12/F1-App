@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F1 UNIVERSE | CENTRAL AGENT</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700;900&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000000; color: #ffffff; font-family: 'Titillium Web', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+
+#app { background: #000000; width: 100%; max-width: 480px; height: 720px; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #222222; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
+.topbar { height: 4px; background: #e10600; }
+.hdr { background: #050505; border-bottom: 1px solid #222222; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 64px; flex-shrink: 0; }
+.logo { font-weight: 900; font-size: 15px; letter-spacing: 4px; display: flex; align-items: center; gap: 8px; }
+.lbar { width: 4px; height: 20px; background: #e10600; }
+.lf1 { color: #e10600; }
+.nav { display: flex; gap: 2px; background: #111111; padding: 3px; border-radius: 6px; border: 1px solid #222222; }
+.nb { background: none; border: none; color: #888888; font-family: 'Titillium Web', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: all .15s ease; }
+.nb:hover { color: #ffffff; }
+.nb.on { color: #ffffff; background: #e10600; }
+
+.body { flex: 1; overflow-y: auto; background: #000000; }
+.body::-webkit-scrollbar { width: 4px; }
+.body::-webkit-scrollbar-thumb { background: #333333; }
+.pg { display: none; height: 100%; }
+.pg.on { display: flex; flex-direction: column; }
+.scroll-container { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+
+.slabel { padding: 20px 20px 12px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #e10600; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+.slabel::after { content: ''; flex: 1; height: 1px; background: #222222; }
+.rrow, .srow { display: flex; align-items: center; padding: 0 20px; height: 64px; border-bottom: 1px solid #111111; }
+.rnum, .spos { font-weight: 800; font-size: 12px; color: #444444; width: 36px; }
+.srow:nth-child(2) .spos { color: #e10600; }
+.rmain, .sinfo { flex: 1; min-width: 0; }
+.rname, .sname { font-size: 14px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rsub, .steam { font-size: 11px; color: #888888; margin-top: 2px; }
+.rright { text-align: right; }
+.rdate { font-size: 11px; color: #666666; }
+.npill { background: #e10600; color: #ffffff; font-size: 9px; font-weight: 900; padding: 1px 6px; border-radius: 2px; margin-left: 8px; text-transform: uppercase; }
+
+/* Constructor Breakdown */
+.c-block { border-bottom: 1px solid #222222; }
+.c-main-row { display: flex; align-items: center; padding: 0 20px; height: 60px; background: #000000; gap: 12px; }
+.c-drivers-breakdown { background: #050505; padding: 6px 20px 12px 52px; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #111111; }
+.c-driver-item { display: flex; justify-content: space-between; font-size: 12px; color: #aaaaaa; }
+.pts { font-weight: 900; font-size: 15px; color: #ffffff; }
+.ptsub { font-size: 9px; color: #e10600; font-weight: 700; text-align: right; }
+
+.stabs { display: flex; margin: 16px 20px; background: #050505; border-radius: 6px; padding: 3px; border: 1px solid #222222; }
+.stab { flex: 1; background: none; border: none; font-family: 'Titillium Web', sans-serif; font-weight: 700; font-size: 11px; color: #666666; padding: 8px; border-radius: 4px; cursor: pointer; text-transform: uppercase; }
+.stab.on { background: #111111; color: #ffffff; border: 1px solid #333333; }
+
+/* Chat interface */
+.chat-wrap { display: flex; flex-direction: column; height: 100%; }
+.chat-msgs { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.msg { display: flex; gap: 10px; max-width: 85%; }
+.msg.u { align-self: flex-end; flex-direction: row-reverse; }
+.av { width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; flex-shrink: 0; }
+.msg.a .av { background: #e10600; color: #ffffff; }
+.msg.u .av { background: #111111; border: 1px solid #222222; }
+.bbl { padding: 12px 16px; font-size: 13px; line-height: 1.5; }
+.msg.a .bbl { background: #050505; border: 1px solid #222222; border-radius: 0 8px 8px 8px; }
+.msg.u .bbl { background: #e10600; border-radius: 8px 0 8px 8px; }
+
+.cfooter { border-top: 1px solid #222222; background: #050505; padding: 14px 20px; display: flex; gap: 12px; align-items: center; }
+.cin { flex: 1; background: #000000; border: 1px solid #222222; border-radius: 4px; padding: 10px 14px; color: #ffffff; font-family: 'Titillium Web', sans-serif; font-size: 13px; resize: none; outline: none; max-height: 80px; }
+.cin:focus { border-color: #e10600; }
+.sndbtn { width: 38px; height: 38px; background: #e10600; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.sndbtn svg { width: 16px; height: 16px; fill: #ffffff; }
+
+.spin-wrap { display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 16px; color: #666666; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.spin { width: 20px; height: 20px; border: 2px solid #222222; border-top-color: #e10600; border-radius: 50%; animation: sp .6s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.dot { border-radius: 50%; flex-shrink: 0; width: 6px; height: 6px; margin-right: 8px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="topbar"></div>
+  <div class="hdr">
+    <div class="logo"><div class="lbar"></div><span class="lf1">F1</span><span>UNIVERSE</span></div>
+    <nav class="nav">
+      <button class="nb on" id="nb-races" onclick="go('races')">Carreras</button>
+      <button class="nb" id="nb-standings" onclick="go('standings')">Mundial</button>
+      <button class="nb" id="nb-chat" onclick="go('chat')">F1GPT</button>
+    </nav>
+  </div>
+  
+  <div class="body">
+    <!-- CARRERAS -->
+    <div class="pg on" id="pg-races">
+      <div class="scroll-container" id="races-content"></div>
+    </div>
+    
+    <!-- MUNDIAL -->
+    <div class="pg" id="pg-standings">
+      <div class="stabs">
+        <button class="stab on" id="stab-d" onclick="swt('d')">Pilotos</button>
+        <button class="stab" id="stab-c" onclick="swt('c')">Constructores</button>
+      </div>
+      <div class="scroll-container" id="standings-content"></div>
+    </div>
+    
+    <!-- CHAT -->
+    <div class="pg" id="pg-chat">
+      <div class="chat-wrap">
+        <div class="chat-msgs" id="msgs">
+          <div class="msg a"><div class="av">F1</div><div class="bbl">🏎️ **Agente Central Activo**. He cargado toda la telemetría de 2026 en segundo plano. Ordéname lo que quieras, jefe.</div></div>
+        </div>
+        <div class="cfooter">
+          <textarea class="cin" id="cin" placeholder="Pregunta por la próxima carrera, escuderías o pilotos..." rows="1" onkeydown="ck(event)"></textarea>
+          <button class="sndbtn" onclick="send()"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CARGA DE LOS SCRIPTS MODULARES -->
+<script src="js/agent.js"></script>
+<script>
+const BASE = 'https://api.jolpi.ca/ergast/f1';
+const TEMPORADA = '2026';
+const TC = { "Red Bull": "#3671C6", "Ferrari": "#E8002D", "McLaren": "#FF8000", "Mercedes": "#27F4D2", "Aston Martin": "#229971", "Alpine": "#FF87BC", "Williams": "#64C4FF", "Haas": "#B6BABD", "Sauber": "#52E252", "RB": "#6692FF", "Audi": "#F50A37" };
+const S = { races: null, standings: null, st: 'd', loading: false };
+
+function go(p) {
+  document.querySelectorAll('.pg').forEach(e => e.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(e => e.classList.remove('on'));
+  document.getElementById('pg-' + p).classList.add('on');
+  document.getElementById('nb-' + p).classList.add('on');
+}
+function swt(t) { S.st = t; document.querySelectorAll('.stab').forEach(e => e.classList.remove('on')); document.getElementById('stab-' + t).classList.add('on'); renderStandings(); }
+function fd(d) { return d ? new Date(d + 'T12:00:00Z').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : d; }
+function spinHtml(msg) { return `<div class="spin-wrap"><div class="spin"></div><div>${msg}</div></div>`; }
+
+async function initSystem() {
+  S.loading = true;
+  await Promise.all([syncRaces(), syncStandings()]);
+  S.loading = false;
+}
+
+async function syncRaces() {
+  try {
+    const res = await fetch(`${BASE}/${TEMPORADA}.json`);
+    if(res.ok) {
+      const data = await res.json();
+      S.races = data.MRData.RaceTable.Races;
+      renderRaces();
+    }
+  } catch(e) { document.getElementById('races-content').innerHTML = "Error cargando carreras."; }
+}
+
+async function syncStandings() {
+  try {
+    const [dRes, cRes] = await Promise.all([fetch(`${BASE}/${TEMPORADA}/driverstandings.json`), fetch(`${BASE}/${TEMPORADA}/constructorstandings.json`)]);
+    if(dRes.ok && cRes.ok) {
+      const dData = await dRes.json(); const cData = await cRes.json();
+      S.standings = { d: dData.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [], c: cData.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [] };
+      renderStandings();
+    }
+  } catch(e) { document.getElementById('standings-content').innerHTML = "Error cargando mundial."; }
+}
+
+function renderRaces() {
+  let h = `<div class="slabel">Calendario Oficial 2026</div>`;
+  const now = new Date(); let nextMarked = false;
+  S.races.forEach(r => {
+    let badge = new Date(r.date + 'T23:59:00') >= now && !nextMarked ? (nextMarked = true, '<span class="npill">Next</span>') : '';
+    h += `<div class="rrow"><div class="rnum">R${r.round}</div><div class="rmain"><div class="rname">${r.raceName}${badge}</div><div class="rsub">${r.Circuit.circuitName}</div></div><div class="rright"><div class="rdate">${fd(r.date)}</div></div></div>`;
+  });
+  document.getElementById('races-content').innerHTML = h;
+}
+
+function renderStandings() {
+  if (!S.standings) return;
+  let h = '';
+  if (S.st === 'd') {
+    S.standings.d.forEach(x => {
+      const team = x.Constructors?.[0]?.name || '';
+      h += `<div class="srow"><div class="spos">#${x.position}</div><div class="dot" style="background:${TC[team]||'#333'}"></div><div class="sinfo"><div class="sname">${x.Driver.givenName} ${x.Driver.familyName}</div><div class="steam">${team}</div></div><div><div class="pts">${x.points}</div><div class="ptsub">PTS</div></div></div>`;
+    });
+    document.getElementById('standings-content').innerHTML = h;
+  } else {
+    S.standings.c.forEach(x => {
+      const teamName = x.Constructor.name;
+      const teamDrivers = S.standings.d.filter(drv => drv.Constructors?.[0]?.name === teamName);
+      let breakdown = '';
+      teamDrivers.forEach(drv => { breakdown += `<div class="c-driver-item"><span>${drv.Driver.familyName}</span><strong>${drv.points} pts</strong></div>`; });
+      h += `<div class="c-block"><div class="c-main-row"><div class="spos">#${x.position}</div><div class="dot" style="background:${TC[teamName]||'#333'}"></div><div class="sinfo"><div class="sname">${teamName}</div><div class="steam" style="color:#e10600; font-size:10px;">DESGLOSE ↓</div></div><div><div class="pts">${x.points}</div><div class="ptsub">EQ</div></div></div><div class="c-drivers-breakdown">${breakdown}</div></div>`;
+    });
+    document.getElementById('standings-content').innerHTML = h;
+  }
+}
+
+function addMsg(role, txt) {
+  const m = document.getElementById('msgs'); const d = document.createElement('div'); d.className = 'msg ' + role;
+  const label = role === 'a' ? 'F1' : 'TÚ';
+  const safe = txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  d.innerHTML = `<div class="av">${label}</div><div class="bbl">${safe}</div>`;
+  m.appendChild(d); m.scrollTop = m.scrollHeight;
+}
+
+async function send() {
+  const inp = document.getElementById('cin'); const txt = inp.value.trim(); if (!txt) return;
+  inp.value = ''; addMsg('u', txt);
+  const reply = await AgentRouter.processInput(txt);
+  addMsg('a', reply);
+}
+function ck(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
+
+document.getElementById('races-content').innerHTML = spinHtml('Sincronizando 2026...');
+document.getElementById('standings-content').innerHTML = spinHtml('Sincronizando 2026...');
+initSystem();
+</script>
+</body>
+</html>
